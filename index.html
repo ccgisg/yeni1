@@ -3,543 +3,352 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>İşyeri Hekimliği Kayıt Programı</title>
+    <title>EK-2 Periyodik Muayene Formu</title>
     <style>
         body {
             font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 0;
-            background-color: #f4f4f4;
+            margin: 20px;
+            line-height: 1.6;
         }
         .container {
-            display: flex;
-            min-height: 100vh;
-        }
-        .sidebar {
-            width: 200px;
-            background-color: #2c3e50;
-            color: white;
-            padding: 20px 0;
-            position: relative;
-        }
-        .main-content {
-            flex: 1;
-            padding: 20px;
-            position: relative;
-        }
-        .button {
-            display: block;
-            width: 90%;
-            padding: 10px;
-            margin: 10px auto;
-            background-color: #3498db;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            text-align: center;
-            cursor: pointer;
-            transition: background-color 0.3s;
-        }
-        .button:hover {
-            background-color: #2980b9;
-        }
-        .top-bar {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 20px;
-            padding-bottom: 10px;
-            border-bottom: 1px solid #ddd;
-        }
-        .login-container {
-            width: 300px;
-            margin: 100px auto;
-            padding: 20px;
-            background-color: white;
-            border-radius: 5px;
-            box-shadow: 0 0 10px rgba(0,0,0,0.1);
-        }
-        .login-container input {
             width: 100%;
-            padding: 10px;
-            margin: 10px 0;
+            max-width: 800px;
+            margin: 0 auto;
+            border: 1px solid #000;
+            padding: 20px;
             box-sizing: border-box;
         }
-        .login-container button {
-            width: 100%;
-            padding: 10px;
-            background-color: #2c3e50;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
         }
-        .date-input {
+        .header h1 {
+            font-size: 16px;
+            text-decoration: underline;
+            margin-bottom: 5px;
+        }
+        .header h2 {
+            font-size: 14px;
+            margin-top: 0;
+        }
+        .form-section {
+            margin-bottom: 15px;
+        }
+        .form-title {
+            font-weight: bold;
+            margin-bottom: 5px;
+            text-decoration: underline;
+        }
+        .form-row {
+            display: flex;
+            margin-bottom: 8px;
+        }
+        .form-group {
+            flex: 1;
+            margin-right: 10px;
+        }
+        .form-group:last-child {
+            margin-right: 0;
+        }
+        label {
+            display: block;
+            margin-bottom: 3px;
+            font-size: 13px;
+        }
+        input[type="text"], input[type="date"], select, textarea {
+            width: 100%;
+            padding: 5px;
+            border: 1px solid #000;
+            border-radius: 3px;
+            background-color: transparent;
+            font-family: Arial, sans-serif;
+        }
+        textarea {
+            height: 60px;
+            resize: vertical;
+        }
+        .signature-area {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 30px;
+        }
+        .signature-box {
+            width: 200px;
+            text-align: center;
+            border-top: 1px solid #000;
+            padding-top: 5px;
+            margin-top: 40px;
+        }
+        .checkbox-group {
             display: flex;
             align-items: center;
+            margin-bottom: 5px;
         }
-        .date-input input {
-            width: 40px;
+        .checkbox-group input {
+            margin-right: 5px;
+        }
+        .footer {
+            font-size: 12px;
             text-align: center;
-        }
-        .date-input span {
-            margin: 0 5px;
-        }
-        .sub-directory {
-            padding-left: 20px;
-            display: none;
-        }
-        .sub-directory button {
-            background-color: #34495e;
-            width: 80%;
-        }
-        .settings-panel {
-            display: none;
-            background-color: white;
-            padding: 20px;
             margin-top: 20px;
-            border-radius: 5px;
-            box-shadow: 0 0 5px rgba(0,0,0,0.1);
-            position: absolute;
-            top: 80px;
-            right: 20px;
-            width: 300px;
-            z-index: 100;
         }
-        .close-btn {
-            position: absolute;
-            top: 10px;
-            right: 10px;
+        .print-button {
+            display: block;
+            margin: 20px auto;
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
             cursor: pointer;
-            font-size: 20px;
-            font-weight: bold;
+            font-size: 16px;
         }
-        .modal-overlay {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0,0,0,0.5);
-            z-index: 50;
+        .print-button:hover {
+            background-color: #45a049;
+        }
+        @media print {
+            .print-button {
+                display: none;
+            }
         }
     </style>
 </head>
 <body>
-    <div id="login-page" class="login-container">
-        <h2>Giriş Yap</h2>
-        <input type="password" id="password" placeholder="Şifre">
-        <button onclick="login()">Giriş Yap</button>
-    </div>
-
-    <div id="main-app" class="container" style="display: none;">
-        <div class="sidebar">
-            <button class="button" onclick="addWorkplace()">İşyeri Ekle</button>
-            <button class="button" onclick="editWorkplace()">İşyeri Değiştir</button>
-            <button class="button" id="workplaces-btn" onclick="toggleSubDirectory()">İşyerlerim ▼</button>
-            <div id="sub-directory" class="sub-directory">
-                <!-- Sub-directory items will be added dynamically -->
-            </div>
-            <button class="button" style="position: absolute; bottom: 70px; left: 20px;" onclick="toggleSettings()">AYARLAR</button>
-            <button class="button" style="position: absolute; bottom: 20px; left: 20px; background-color: #e74c3c;" onclick="logout()">Çıkış Yap</button>
+    <div class="container">
+        <div class="header">
+            <h1>EK-2 PERİYODİK MUAYENE FORMU</h1>
+            <h2>(İş Sağlığı ve Güvenliği Yönetmeliği Ek-2)</h2>
         </div>
 
-        <div class="main-content">
-            <div class="top-bar">
-                <div>
-                    <button class="button" style="display: inline-block; width: auto;" onclick="backupData()">Yedek Al</button>
-                    <button class="button" style="display: inline-block; width: auto; margin-left: 10px;" onclick="restoreData()">Yedekten Dön</button>
+        <div class="form-section">
+            <div class="form-row">
+                <div class="form-group" style="flex: 2;">
+                    <label for="company-name">İşyerinin Ünvanı:</label>
+                    <input type="text" id="company-name">
                 </div>
-                <div id="current-date"></div>
-            </div>
-
-            <div id="content-area">
-                <h2>Hoş Geldiniz</h2>
-                <p>Sol menüden işlem seçiniz.</p>
-            </div>
-
-            <div id="modal-overlay" class="modal-overlay" onclick="closeSettings()"></div>
-            
-            <div id="settings-panel" class="settings-panel">
-                <span class="close-btn" onclick="closeSettings()">&times;</span>
-                <h3>Ayarlar</h3>
-                <label for="doctor-name">Doktor İsmi:</label>
-                <input type="text" id="doctor-name">
-                
-                <label for="certificate-no">Sertifika No:</label>
-                <input type="text" id="certificate-no">
-                
-                <label for="certificate-date">Sertifika Tarihi:</label>
-                <div class="date-input">
-                    <input type="text" id="cert-day" maxlength="2" placeholder="gg" oninput="autoDot('cert-day', 'cert-month')">
-                    <span>.</span>
-                    <input type="text" id="cert-month" maxlength="2" placeholder="aa" oninput="autoDot('cert-month', 'cert-year')">
-                    <span>.</span>
-                    <input type="text" id="cert-year" maxlength="4" placeholder="yyyy">
+                <div class="form-group">
+                    <label for="company-sicil">İşyeri Sicil No:</label>
+                    <input type="text" id="company-sicil">
                 </div>
-                
-                <button class="button" onclick="saveSettings()">Ayarları Kaydet</button>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="company-address">Adresi:</label>
+                    <input type="text" id="company-address">
+                </div>
+                <div class="form-group">
+                    <label for="company-phone">Telefon:</label>
+                    <input type="text" id="company-phone">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="company-activity">Faaliyet Konusu:</label>
+                    <input type="text" id="company-activity">
+                </div>
+                <div class="form-group">
+                    <label for="company-worker-count">Çalışan Sayısı:</label>
+                    <input type="text" id="company-worker-count">
+                </div>
             </div>
         </div>
+
+        <div class="form-section">
+            <div class="form-title">İŞÇİNİN</div>
+            <div class="form-row">
+                <div class="form-group" style="flex: 2;">
+                    <label for="worker-name">Adı Soyadı:</label>
+                    <input type="text" id="worker-name">
+                </div>
+                <div class="form-group">
+                    <label for="worker-tc">TC Kimlik No:</label>
+                    <input type="text" id="worker-tc">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="worker-birthdate">Doğum Tarihi:</label>
+                    <input type="date" id="worker-birthdate">
+                </div>
+                <div class="form-group">
+                    <label for="worker-gender">Cinsiyeti:</label>
+                    <select id="worker-gender">
+                        <option value="erkek">Erkek</option>
+                        <option value="kadin">Kadın</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="worker-sigorta">SGK Sicil No:</label>
+                    <input type="text" id="worker-sigorta">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="worker-department">Çalıştığı Bölüm:</label>
+                    <input type="text" id="worker-department">
+                </div>
+                <div class="form-group">
+                    <label for="worker-job">Mesleği/Görevi:</label>
+                    <input type="text" id="worker-job">
+                </div>
+                <div class="form-group">
+                    <label for="worker-seniority">Kıdemi:</label>
+                    <input type="text" id="worker-seniority">
+                </div>
+            </div>
+        </div>
+
+        <div class="form-section">
+            <div class="form-title">MUAYENE BİLGİLERİ</div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="examination-date">Muayene Tarihi:</label>
+                    <input type="date" id="examination-date">
+                </div>
+                <div class="form-group">
+                    <label for="examination-type">Muayene Türü:</label>
+                    <select id="examination-type">
+                        <option value="ilk">İlk Muayene</option>
+                        <option value="periyodik">Periyodik Muayene</option>
+                        <option value="erken">Erken Muayene</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="next-examination">Sonraki Muayene Tarihi:</label>
+                    <input type="date" id="next-examination">
+                </div>
+            </div>
+        </div>
+
+        <div class="form-section">
+            <div class="form-title">İŞE GİRİŞ MUAYENESİ</div>
+            <div class="checkbox-group">
+                <input type="checkbox" id="anamnez">
+                <label for="anamnez">Anamnez alındı</label>
+            </div>
+            <div class="checkbox-group">
+                <input type="checkbox" id="fizik-muayene">
+                <label for="fizik-muayene">Fizik muayene yapıldı</label>
+            </div>
+            <div class="checkbox-group">
+                <input type="checkbox" id="laboratuvar">
+                <label for="laboratuvar">Laboratuvar tetkikleri yapıldı</label>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="laboratory-details">Laboratuvar Tetkikleri:</label>
+                    <input type="text" id="laboratory-details">
+                </div>
+            </div>
+        </div>
+
+        <div class="form-section">
+            <div class="form-title">MESLEKİ MARUZİYET BİLGİLERİ</div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="exposure-type">Maruziyet Türü:</label>
+                    <input type="text" id="exposure-type">
+                </div>
+                <div class="form-group">
+                    <label for="exposure-duration">Maruziyet Süresi:</label>
+                    <input type="text" id="exposure-duration">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="protective-measures">Koruyucu Önlemler:</label>
+                    <input type="text" id="protective-measures">
+                </div>
+            </div>
+        </div>
+
+        <div class="form-section">
+            <div class="form-title">TANI VE DEĞERLENDİRME</div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="diagnosis">Tanı:</label>
+                    <textarea id="diagnosis"></textarea>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="recommendations">Öneriler:</label>
+                    <textarea id="recommendations"></textarea>
+                </div>
+            </div>
+        </div>
+
+        <div class="form-section">
+            <div class="form-title">İŞE GİRİŞ KARARI</div>
+            <div class="checkbox-group">
+                <input type="radio" name="work-decision" id="decision-suitable" value="suitable">
+                <label for="decision-suitable">İşe uygun</label>
+            </div>
+            <div class="checkbox-group">
+                <input type="radio" name="work-decision" id="decision-limited" value="limited">
+                <label for="decision-limited">İşe sınırlı uygun (Açıklama gerekli)</label>
+            </div>
+            <div class="checkbox-group">
+                <input type="radio" name="work-decision" id="decision-unsuitable" value="unsuitable">
+                <label for="decision-unsuitable">İşe uygun değil (Açıklama gerekli)</label>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="decision-details">Açıklama:</label>
+                    <textarea id="decision-details"></textarea>
+                </div>
+            </div>
+        </div>
+
+        <div class="signature-area">
+            <div class="signature-box">
+                <p>İşçi/İşveren Vekili</p>
+                <p>Adı Soyadı & İmza</p>
+            </div>
+            <div class="signature-box">
+                <p>İşyeri Hekimi</p>
+                <p>Adı Soyadı & İmza</p>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>Bu form, İş Sağlığı ve Güvenliği Yönetmeliği'nin 15. maddesi gereğince düzenlenmiştir.</p>
+        </div>
     </div>
+
+    <button class="print-button" onclick="window.print()">Formu Yazdır</button>
 
     <script>
-        // Data storage
-        let workplaces = JSON.parse(localStorage.getItem('workplaces')) || [];
-        let settings = JSON.parse(localStorage.getItem('settings')) || {
-            doctorName: 'Dr. Ahmet Yılmaz',
-            certificateNo: 'HEK-12345',
-            certificateDate: '15.06.2020'
-        };
-
-        // Login function
-        function login() {
-            const password = document.getElementById('password').value;
-            if (password === '123456') {
-                document.getElementById('login-page').style.display = 'none';
-                document.getElementById('main-app').style.display = 'flex';
-                updateCurrentDate();
-                loadSettings();
-            } else {
-                alert('Hatalı şifre! Lütfen tekrar deneyin.');
-            }
-        }
-
-        // Logout function
-        function logout() {
-            document.getElementById('login-page').style.display = 'block';
-            document.getElementById('main-app').style.display = 'none';
-            document.getElementById('password').value = '';
-            closeSettings();
-        }
-
-        // Toggle sub-directory
-        function toggleSubDirectory() {
-            const subDir = document.getElementById('sub-directory');
-            const btn = document.getElementById('workplaces-btn');
-            
-            if (subDir.style.display === 'block') {
-                subDir.style.display = 'none';
-                btn.innerHTML = 'İşyerlerim ▼';
-            } else {
-                subDir.style.display = 'block';
-                btn.innerHTML = 'İşyerlerim ▲';
-                loadWorkplaces();
-            }
-        }
-
-        // Auto add dot in date inputs
-        function autoDot(currentField, nextField) {
-            const current = document.getElementById(currentField);
-            if (current.value.length === 2) {
-                document.getElementById(nextField).focus();
-            }
-        }
-
-        // Update current date
-        function updateCurrentDate() {
-            const now = new Date();
-            const day = String(now.getDate()).padStart(2, '0');
-            const month = String(now.getMonth() + 1).padStart(2, '0');
-            const year = now.getFullYear();
-            document.getElementById('current-date').textContent = `${day}.${month}.${year}`;
-        }
-
-        // Toggle settings panel
-        function toggleSettings() {
-            const panel = document.getElementById('settings-panel');
-            const overlay = document.getElementById('modal-overlay');
-            
-            if (panel.style.display === 'block') {
-                panel.style.display = 'none';
-                overlay.style.display = 'none';
-            } else {
-                panel.style.display = 'block';
-                overlay.style.display = 'block';
-                loadSettings();
-            }
-        }
-
-        // Close settings panel
-        function closeSettings() {
-            document.getElementById('settings-panel').style.display = 'none';
-            document.getElementById('modal-overlay').style.display = 'none';
-        }
-
-        // Handle ESC key press
-        document.addEventListener('keydown', function(event) {
-            if (event.key === 'Escape') {
-                closeSettings();
-            }
-        });
-
-        // Backup data
-        function backupData() {
-            const data = {
-                workplaces: workplaces,
-                settings: settings
-            };
-            const blob = new Blob([JSON.stringify(data)], {type: 'application/json'});
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'isyeri_hekimligi_yedek_' + new Date().toISOString().slice(0,10) + '.json';
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-            alert('Yedekleme başarıyla tamamlandı.');
-        }
-
-        // Restore data
-        function restoreData() {
-            const input = document.createElement('input');
-            input.type = 'file';
-            input.accept = '.json';
-            
-            input.onchange = e => {
-                const file = e.target.files[0];
-                const reader = new FileReader();
-                reader.readAsText(file, 'UTF-8');
-                
-                reader.onload = readerEvent => {
-                    try {
-                        const data = JSON.parse(readerEvent.target.result);
-                        workplaces = data.workplaces || [];
-                        settings = data.settings || {};
-                        localStorage.setItem('workplaces', JSON.stringify(workplaces));
-                        localStorage.setItem('settings', JSON.stringify(settings));
-                        loadWorkplaces();
-                        loadSettings();
-                        alert('Yedekten dönme işlemi başarılı.');
-                    } catch (error) {
-                        alert('Geçersiz yedek dosyası: ' + error.message);
-                    }
-                };
-            };
-            
-            input.click();
-        }
-
-        // Add workplace
-        function addWorkplace() {
-            document.getElementById('content-area').innerHTML = `
-                <h2>Yeni İşyeri Ekle</h2>
-                <form id="add-workplace-form">
-                    <label for="workplace-name">İşyeri Adı:</label>
-                    <input type="text" id="workplace-name" style="width: 100%; padding: 8px; margin: 5px 0 15px;">
-                    
-                    <label for="workplace-address">Adres:</label>
-                    <textarea id="workplace-address" style="width: 100%; padding: 8px; margin: 5px 0 15px; height: 80px;"></textarea>
-                    
-                    <label for="contract-date">Sözleşme Tarihi:</label>
-                    <div class="date-input">
-                        <input type="text" id="contract-day" maxlength="2" placeholder="gg" oninput="autoDot('contract-day', 'contract-month')">
-                        <span>.</span>
-                        <input type="text" id="contract-month" maxlength="2" placeholder="aa" oninput="autoDot('contract-month', 'contract-year')">
-                        <span>.</span>
-                        <input type="text" id="contract-year" maxlength="4" placeholder="yyyy">
-                    </div>
-                    
-                    <button type="button" class="button" onclick="saveWorkplace()">Kaydet</button>
-                </form>
-            `;
-        }
-
-        // Save workplace
-        function saveWorkplace() {
-            const name = document.getElementById('workplace-name').value;
-            const address = document.getElementById('workplace-address').value;
-            const day = document.getElementById('contract-day').value;
-            const month = document.getElementById('contract-month').value;
-            const year = document.getElementById('contract-year').value;
-            
-            if (!name || !address || !day || !month || !year) {
-                alert('Lütfen tüm alanları doldurunuz.');
-                return;
-            }
-            
-            const newWorkplace = {
-                id: Date.now(),
-                name: name,
-                address: address,
-                contractDate: `${day.padStart(2, '0')}.${month.padStart(2, '0')}.${year}`
-            };
-            
-            workplaces.push(newWorkplace);
-            localStorage.setItem('workplaces', JSON.stringify(workplaces));
-            
-            loadWorkplaces();
-            document.getElementById('content-area').innerHTML = `
-                <h2>${name}</h2>
-                <p><strong>Adres:</strong> ${address}</p>
-                <p><strong>Sözleşme Tarihi:</strong> ${newWorkplace.contractDate}</p>
-            `;
-        }
-
-        // Edit workplace
-        function editWorkplace() {
-            document.getElementById('content-area').innerHTML = `
-                <h2>İşyeri Düzenle</h2>
-                <p>İşyeri seçiniz:</p>
-                <select id="workplace-select" style="width: 100%; padding: 8px; margin: 5px 0 15px;" onchange="loadWorkplaceForEdit()">
-                    <option value="">-- Seçiniz --</option>
-                    ${workplaces.map(wp => `<option value="${wp.id}">${wp.name}</option>`).join('')}
-                </select>
-                <div id="edit-workplace-form" style="display: none;">
-                    <!-- Form will be displayed when a workplace is selected -->
-                </div>
-            `;
-        }
-
-        // Load workplace for editing
-        function loadWorkplaceForEdit() {
-            const select = document.getElementById('workplace-select');
-            const workplaceId = parseInt(select.value);
-            const workplace = workplaces.find(wp => wp.id === workplaceId);
-            
-            if (!workplace) return;
-            
-            const [day, month, year] = workplace.contractDate.split('.');
-            
-            document.getElementById('edit-workplace-form').innerHTML = `
-                <h3>${workplace.name} Düzenle</h3>
-                <form id="edit-form">
-                    <label for="edit-workplace-name">İşyeri Adı:</label>
-                    <input type="text" id="edit-workplace-name" value="${workplace.name}" style="width: 100%; padding: 8px; margin: 5px 0 15px;">
-                    
-                    <label for="edit-workplace-address">Adres:</label>
-                    <textarea id="edit-workplace-address" style="width: 100%; padding: 8px; margin: 5px 0 15px; height: 80px;">${workplace.address}</textarea>
-                    
-                    <label for="edit-contract-date">Sözleşme Tarihi:</label>
-                    <div class="date-input">
-                        <input type="text" id="edit-contract-day" maxlength="2" value="${day}" oninput="autoDot('edit-contract-day', 'edit-contract-month')">
-                        <span>.</span>
-                        <input type="text" id="edit-contract-month" maxlength="2" value="${month}" oninput="autoDot('edit-contract-month', 'edit-contract-year')">
-                        <span>.</span>
-                        <input type="text" id="edit-contract-year" maxlength="4" value="${year}">
-                    </div>
-                    
-                    <button type="button" class="button" onclick="updateWorkplace(${workplace.id})">Güncelle</button>
-                    <button type="button" class="button" style="background-color: #e74c3c;" onclick="deleteWorkplace(${workplace.id})">Sil</button>
-                </form>
-            `;
-            
-            document.getElementById('edit-workplace-form').style.display = 'block';
-        }
-
-        // Update workplace
-        function updateWorkplace(id) {
-            const name = document.getElementById('edit-workplace-name').value;
-            const address = document.getElementById('edit-workplace-address').value;
-            const day = document.getElementById('edit-contract-day').value;
-            const month = document.getElementById('edit-contract-month').value;
-            const year = document.getElementById('edit-contract-year').value;
-            
-            const index = workplaces.findIndex(wp => wp.id === id);
-            if (index !== -1) {
-                workplaces[index] = {
-                    id: id,
-                    name: name,
-                    address: address,
-                    contractDate: `${day.padStart(2, '0')}.${month.padStart(2, '0')}.${year}`
-                };
-                
-                localStorage.setItem('workplaces', JSON.stringify(workplaces));
-                loadWorkplaces();
-                editWorkplace();
-            }
-        }
-
-        // Delete workplace
-        function deleteWorkplace(id) {
-            if (confirm('Bu işyerini silmek istediğinize emin misiniz?')) {
-                workplaces = workplaces.filter(wp => wp.id !== id);
-                localStorage.setItem('workplaces', JSON.stringify(workplaces));
-                loadWorkplaces();
-                editWorkplace();
-            }
-        }
-
-        // Load workplaces
-        function loadWorkplaces() {
-            const subDir = document.getElementById('sub-directory');
-            subDir.innerHTML = '';
-            
-            workplaces.forEach(workplace => {
-                const btn = document.createElement('button');
-                btn.className = 'button';
-                btn.textContent = workplace.name;
-                btn.onclick = function() {
-                    showWorkplaceDetails(workplace);
-                };
-                subDir.appendChild(btn);
-            });
-        }
-
-        // Show workplace details
-        function showWorkplaceDetails(workplace) {
-            document.getElementById('content-area').innerHTML = `
-                <h2>${workplace.name}</h2>
-                <p><strong>Adres:</strong> ${workplace.address}</p>
-                <p><strong>Sözleşme Tarihi:</strong> ${workplace.contractDate}</p>
-                <button class="button" onclick="editWorkplace()">Düzenle</button>
-            `;
-        }
-
-        // Load settings
-        function loadSettings() {
-            if (settings.certificateDate) {
-                const [day, month, year] = settings.certificateDate.split('.');
-                document.getElementById('doctor-name').value = settings.doctorName || '';
-                document.getElementById('certificate-no').value = settings.certificateNo || '';
-                document.getElementById('cert-day').value = day || '';
-                document.getElementById('cert-month').value = month || '';
-                document.getElementById('cert-year').value = year || '';
-            }
-        }
-
-        // Save settings
-        function saveSettings() {
-            const day = document.getElementById('cert-day').value;
-            const month = document.getElementById('cert-month').value;
-            const year = document.getElementById('cert-year').value;
-            
-            settings = {
-                doctorName: document.getElementById('doctor-name').value,
-                certificateNo: document.getElementById('certificate-no').value,
-                certificateDate: `${day.padStart(2, '0')}.${month.padStart(2, '0')}.${year}`
-            };
-            
-            localStorage.setItem('settings', JSON.stringify(settings));
-            alert('Ayarlar başarıyla kaydedildi.');
-            closeSettings();
-        }
-
-        // Initialize
+        // Otomatik tarih doldurma
         document.addEventListener('DOMContentLoaded', function() {
-            // Load any saved data
-            if (localStorage.getItem('workplaces')) {
-                workplaces = JSON.parse(localStorage.getItem('workplaces'));
-            }
+            const today = new Date();
+            const nextYear = new Date();
+            nextYear.setFullYear(today.getFullYear() + 1);
             
-            if (localStorage.getItem('settings')) {
-                settings = JSON.parse(localStorage.getItem('settings'));
-            }
+            // Bugünün tarihini formatla (YYYY-MM-DD)
+            const formatDate = (date) => {
+                const d = new Date(date);
+                let month = '' + (d.getMonth() + 1);
+                let day = '' + d.getDate();
+                const year = d.getFullYear();
             
-            // Set cursor pointer for all buttons
-            const buttons = document.querySelectorAll('.button');
-            buttons.forEach(button => {
-                button.style.cursor = 'pointer';
+                if (month.length < 2) month = '0' + month;
+                if (day.length < 2) day = '0' + day;
+            
+                return [year, month, day].join('-');
+            };
+            
+            document.getElementById('examination-date').value = formatDate(today);
+            document.getElementById('next-examination').value = formatDate(nextYear);
+            
+            // TCKN otomatik formatlama
+            document.getElementById('worker-tc').addEventListener('input', function(e) {
+                this.value = this.value.replace(/\D/g, '').slice(0, 11);
             });
             
-            // Close settings when clicking outside
-            document.addEventListener('click', function(event) {
-                const panel = document.getElementById('settings-panel');
-                const overlay = document.getElementById('modal-overlay');
-                if (event.target === overlay && panel.style.display === 'block') {
-                    closeSettings();
-                }
+            // Telefon numarası formatlama
+            document.getElementById('company-phone').addEventListener('input', function(e) {
+                this.value = this.value.replace(/\D/g, '').slice(0, 10);
             });
         });
     </script>
