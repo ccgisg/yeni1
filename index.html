@@ -1,1 +1,340 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>İşyeri Hekimliği Kayıt Programı</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+        }
+        .container {
+            display: flex;
+            min-height: 100vh;
+        }
+        .sidebar {
+            width: 200px;
+            background-color: #2c3e50;
+            color: white;
+            padding: 20px 0;
+        }
+        .main-content {
+            flex: 1;
+            padding: 20px;
+        }
+        .button {
+            display: block;
+            width: 90%;
+            padding: 10px;
+            margin: 10px auto;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            text-align: center;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .button:hover {
+            background-color: #2980b9;
+            cursor: pointer;
+        }
+        .top-bar {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #ddd;
+        }
+        .login-container {
+            width: 300px;
+            margin: 100px auto;
+            padding: 20px;
+            background-color: white;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        .login-container input {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            box-sizing: border-box;
+        }
+        .login-container button {
+            width: 100%;
+            padding: 10px;
+            background-color: #2c3e50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .date-input {
+            display: flex;
+            align-items: center;
+        }
+        .date-input input {
+            width: 40px;
+            text-align: center;
+        }
+        .date-input span {
+            margin: 0 5px;
+        }
+        .sub-directory {
+            padding-left: 20px;
+            display: none;
+        }
+        .sub-directory button {
+            background-color: #34495e;
+            width: 80%;
+        }
+        .settings-panel {
+            display: none;
+            background-color: white;
+            padding: 20px;
+            margin-top: 20px;
+            border-radius: 5px;
+            box-shadow: 0 0 5px rgba(0,0,0,0.1);
+        }
+        .settings-panel input {
+            width: 100%;
+            padding: 8px;
+            margin: 5px 0 15px;
+            box-sizing: border-box;
+        }
+    </style>
+</head>
+<body>
+    <div id="login-page" class="login-container">
+        <h2>Giriş Yap</h2>
+        <input type="password" id="password" placeholder="Şifre">
+        <button onclick="login()">Giriş Yap</button>
+    </div>
 
+    <div id="main-app" class="container" style="display: none;">
+        <div class="sidebar">
+            <button class="button" onclick="addWorkplace()">İşyeri Ekle</button>
+            <button class="button" onclick="editWorkplace()">İşyeri Değiştir</button>
+            <button class="button" id="workplaces-btn" onclick="toggleSubDirectory()">İşyerlerim ▼</button>
+            <div id="sub-directory" class="sub-directory">
+                <!-- Sub-directory items will be added dynamically -->
+            </div>
+            <button class="button" style="position: absolute; bottom: 70px; left: 20px;" onclick="showSettings()">AYARLAR</button>
+            <button class="button" style="position: absolute; bottom: 20px; left: 20px; background-color: #e74c3c;" onclick="logout()">Çıkış Yap</button>
+        </div>
+
+        <div class="main-content">
+            <div class="top-bar">
+                <div>
+                    <button class="button" style="display: inline-block; width: auto;" onclick="backupData()">Yedek Al</button>
+                    <button class="button" style="display: inline-block; width: auto; margin-left: 10px;" onclick="restoreData()">Yedekten Dön</button>
+                </div>
+                <div id="current-date"></div>
+            </div>
+
+            <div id="content-area">
+                <h2>Hoş Geldiniz</h2>
+                <p>Sol menüden işlem seçiniz.</p>
+            </div>
+
+            <div id="settings-panel" class="settings-panel">
+                <h3>Ayarlar</h3>
+                <label for="doctor-name">Doktor İsmi:</label>
+                <input type="text" id="doctor-name">
+                
+                <label for="certificate-no">Sertifika No:</label>
+                <input type="text" id="certificate-no">
+                
+                <label for="certificate-date">Sertifika Tarihi:</label>
+                <div class="date-input">
+                    <input type="text" id="cert-day" maxlength="2" placeholder="gg" oninput="autoDot('cert-day', 'cert-month')">
+                    <span>.</span>
+                    <input type="text" id="cert-month" maxlength="2" placeholder="aa" oninput="autoDot('cert-month', 'cert-year')">
+                    <span>.</span>
+                    <input type="text" id="cert-year" maxlength="4" placeholder="yyyy">
+                </div>
+                
+                <button class="button" onclick="saveSettings()">Ayarları Kaydet</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Login function
+        function login() {
+            const password = document.getElementById('password').value;
+            if (password === '123456') {
+                document.getElementById('login-page').style.display = 'none';
+                document.getElementById('main-app').style.display = 'flex';
+                updateCurrentDate();
+            } else {
+                alert('Hatalı şifre! Lütfen tekrar deneyin.');
+            }
+        }
+
+        // Logout function
+        function logout() {
+            document.getElementById('login-page').style.display = 'block';
+            document.getElementById('main-app').style.display = 'none';
+            document.getElementById('password').value = '';
+        }
+
+        // Toggle sub-directory
+        function toggleSubDirectory() {
+            const subDir = document.getElementById('sub-directory');
+            const btn = document.getElementById('workplaces-btn');
+            
+            if (subDir.style.display === 'block') {
+                subDir.style.display = 'none';
+                btn.innerHTML = 'İşyerlerim ▼';
+            } else {
+                subDir.style.display = 'block';
+                btn.innerHTML = 'İşyerlerim ▲';
+                // Here you would load workplaces from storage
+                loadWorkplaces();
+            }
+        }
+
+        // Auto add dot in date inputs
+        function autoDot(currentField, nextField) {
+            const current = document.getElementById(currentField);
+            if (current.value.length === 2) {
+                document.getElementById(nextField).focus();
+            }
+        }
+
+        // Update current date
+        function updateCurrentDate() {
+            const now = new Date();
+            const day = String(now.getDate()).padStart(2, '0');
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const year = now.getFullYear();
+            document.getElementById('current-date').textContent = `${day}.${month}.${year}`;
+        }
+
+        // Show settings panel
+        function showSettings() {
+            const panel = document.getElementById('settings-panel');
+            if (panel.style.display === 'block') {
+                panel.style.display = 'none';
+            } else {
+                panel.style.display = 'block';
+                // Here you would load settings from storage
+                loadSettings();
+            }
+        }
+
+        // Backup data
+        function backupData() {
+            alert('Yedek alma işlemi başlatıldı.');
+            // Implement backup functionality
+        }
+
+        // Restore data
+        function restoreData() {
+            alert('Yedekten dönme işlemi başlatıldı.');
+            // Implement restore functionality
+        }
+
+        // Add workplace
+        function addWorkplace() {
+            document.getElementById('content-area').innerHTML = `
+                <h2>Yeni İşyeri Ekle</h2>
+                <form id="add-workplace-form">
+                    <label for="workplace-name">İşyeri Adı:</label>
+                    <input type="text" id="workplace-name" style="width: 100%; padding: 8px; margin: 5px 0 15px;">
+                    
+                    <label for="workplace-address">Adres:</label>
+                    <textarea id="workplace-address" style="width: 100%; padding: 8px; margin: 5px 0 15px; height: 80px;"></textarea>
+                    
+                    <label for="contract-date">Sözleşme Tarihi:</label>
+                    <div class="date-input">
+                        <input type="text" id="contract-day" maxlength="2" placeholder="gg" oninput="autoDot('contract-day', 'contract-month')">
+                        <span>.</span>
+                        <input type="text" id="contract-month" maxlength="2" placeholder="aa" oninput="autoDot('contract-month', 'contract-year')">
+                        <span>.</span>
+                        <input type="text" id="contract-year" maxlength="4" placeholder="yyyy">
+                    </div>
+                    
+                    <button type="button" class="button" onclick="saveWorkplace()">Kaydet</button>
+                </form>
+            `;
+        }
+
+        // Edit workplace
+        function editWorkplace() {
+            document.getElementById('content-area').innerHTML = `
+                <h2>İşyeri Düzenle</h2>
+                <p>İşyeri seçiniz:</p>
+                <select id="workplace-select" style="width: 100%; padding: 8px; margin: 5px 0 15px;">
+                    <option value="">-- Seçiniz --</option>
+                    <!-- Workplace options would be loaded from storage -->
+                </select>
+                <div id="edit-workplace-form" style="display: none;">
+                    <!-- Form would be displayed when a workplace is selected -->
+                </div>
+            `;
+        }
+
+        // Save workplace
+        function saveWorkplace() {
+            alert('İşyeri bilgileri kaydedildi.');
+            // Implement save functionality
+        }
+
+        // Load workplaces
+        function loadWorkplaces() {
+            const subDir = document.getElementById('sub-directory');
+            subDir.innerHTML = '';
+            // This would be loaded from storage in a real application
+            const sampleWorkplaces = ['İşyeri 1', 'İşyeri 2', 'İşyeri 3'];
+            
+            sampleWorkplaces.forEach(workplace => {
+                const btn = document.createElement('button');
+                btn.className = 'button';
+                btn.textContent = workplace;
+                btn.onclick = function() {
+                    showWorkplaceDetails(workplace);
+                };
+                subDir.appendChild(btn);
+            });
+        }
+
+        // Show workplace details
+        function showWorkplaceDetails(workplace) {
+            document.getElementById('content-area').innerHTML = `
+                <h2>${workplace}</h2>
+                <p>Burada işyeri detayları gösterilecek.</p>
+                <!-- More details would be shown here -->
+            `;
+        }
+
+        // Load settings
+        function loadSettings() {
+            // This would be loaded from storage in a real application
+            document.getElementById('doctor-name').value = 'Dr. Ahmet Yılmaz';
+            document.getElementById('certificate-no').value = 'HEK-12345';
+            document.getElementById('cert-day').value = '15';
+            document.getElementById('cert-month').value = '06';
+            document.getElementById('cert-year').value = '2020';
+        }
+
+        // Save settings
+        function saveSettings() {
+            alert('Ayarlar kaydedildi.');
+            // Implement save settings functionality
+        }
+
+        // Change cursor to pointer on button hover
+        document.addEventListener('DOMContentLoaded', function() {
+            const buttons = document.querySelectorAll('.button');
+            buttons.forEach(button => {
+                button.style.cursor = 'pointer';
+            });
+        });
+    </script>
+</body>
+</html>
