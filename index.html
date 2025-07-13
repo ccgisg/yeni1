@@ -178,6 +178,48 @@
             display: none;
             padding-left: 20px;
         }
+        .ek2-form-container {
+            display: none;
+            background-color: white;
+            padding: 20px;
+            margin-top: 20px;
+            border-radius: 5px;
+            box-shadow: 0 0 5px rgba(0,0,0,0.1);
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        .ek2-form-container table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 10px 0;
+        }
+        .ek2-form-container th, .ek2-form-container td {
+            border: 1px solid black;
+            padding: 5px;
+            vertical-align: top;
+        }
+        .ek2-form-container th {
+            background-color: #f2f2f2;
+        }
+        .ek2-form-container .underline {
+            border-bottom: 1px solid black;
+            display: inline-block;
+            min-width: 100px;
+        }
+        .ek2-form-container .checkbox {
+            width: 15px;
+            height: 15px;
+            border: 1px solid black;
+            display: inline-block;
+            margin-right: 5px;
+        }
+        .ek2-form-container .signature-box {
+            margin-top: 50px;
+            border-top: 1px solid black;
+            width: 200px;
+            text-align: center;
+            padding-top: 5px;
+        }
     </style>
 </head>
 <body>
@@ -233,7 +275,24 @@
                     <input type="text" id="cert-year" maxlength="4" placeholder="yyyy">
                 </div>
                 
+                <label for="diploma-no">Diploma No:</label>
+                <input type="text" id="diploma-no">
+                
+                <label for="diploma-date">Diploma Tarihi:</label>
+                <input type="text" id="diploma-date">
+                
+                <label for="registration-no">Tescil No:</label>
+                <input type="text" id="registration-no">
+                
+                <label for="registration-date">Tescil Tarihi:</label>
+                <input type="text" id="registration-date">
+                
                 <button class="button" onclick="saveSettings()">Ayarları Kaydet</button>
+            </div>
+
+            <div id="ek2-form-container" class="ek2-form-container">
+                <!-- EK-2 form will be loaded here dynamically -->
+                <button class="button" onclick="closeEk2Form()">EK-2 Formunu Kapat</button>
             </div>
         </div>
     </div>
@@ -244,9 +303,14 @@
         let settings = JSON.parse(localStorage.getItem('settings')) || {
             doctorName: 'Dr. Ahmet Yılmaz',
             certificateNo: 'HEK-12345',
-            certificateDate: '15.06.2020'
+            certificateDate: '15.06.2020',
+            diplomaNo: '',
+            diplomaDate: '',
+            registrationNo: '',
+            registrationDate: ''
         };
         let currentWorkplaceId = null;
+        let currentWorkerId = null;
 
         // Login function
         function login() {
@@ -269,6 +333,7 @@
                 <p>Sol menüden işlem seçiniz.</p>
             `;
             currentWorkplaceId = null;
+            document.getElementById('ek2-form-container').style.display = 'none';
         }
 
         // Logout function
@@ -277,6 +342,7 @@
             document.getElementById('main-app').style.display = 'none';
             document.getElementById('password').value = '';
             closeSettings();
+            closeEk2Form();
         }
 
         // Toggle sub-directory
@@ -332,10 +398,19 @@
             document.getElementById('modal-overlay').style.display = 'none';
         }
 
+        // Close EK-2 form
+        function closeEk2Form() {
+            document.getElementById('ek2-form-container').style.display = 'none';
+            if (currentWorkplaceId) {
+                enterWorkplace(workplaces.find(wp => wp.id === currentWorkplaceId));
+            }
+        }
+
         // Handle ESC key press
         document.addEventListener('keydown', function(event) {
             if (event.key === 'Escape') {
                 closeSettings();
+                closeEk2Form();
             }
         });
 
@@ -569,6 +644,7 @@
         // Enter workplace
         function enterWorkplace(workplace) {
             currentWorkplaceId = workplace.id;
+            document.getElementById('ek2-form-container').style.display = 'none';
             
             document.getElementById('content-area').innerHTML = `
                 <div class="workplace-header">
@@ -636,7 +712,7 @@
             `;
         }
 
-        // Add worker (Sadece TC kimlik no ve isim soyisim alanları)
+        // Add worker
         function addWorker() {
             document.getElementById('content-area').innerHTML = `
                 <h2>Yeni Çalışan Ekle</h2>
@@ -658,7 +734,7 @@
             `;
         }
 
-        // Save worker (Sadece TC kimlik no ve isim soyisim alanları)
+        // Save worker
         function saveWorker() {
             const name = document.getElementById('worker-name').value;
             const tc = document.getElementById('worker-tc').value;
@@ -721,8 +797,534 @@
             const worker = workplace.workers.find(w => w.id === workerId);
             if (!worker) return;
             
-            alert(`${worker.name} için EK-2 formu oluşturulacak.`);
-            // Here you would implement the actual EK-2 generation
+            currentWorkerId = workerId;
+            
+            // Format today's date
+            const today = new Date();
+            const day = String(today.getDate()).padStart(2, '0');
+            const month = String(today.getMonth() + 1).padStart(2, '0');
+            const year = today.getFullYear();
+            const formattedDate = `${day}.${month}.${year}`;
+            
+            document.getElementById('ek2-form-container').innerHTML = `
+                <h2>EK-2 Periyodik Muayene Formu</h2>
+                <button class="button" onclick="closeEk2Form()">EK-2 Formunu Kapat</button>
+                <button class="button" onclick="printEk2Form()">Yazdır</button>
+                
+                <table>
+                    <colgroup>
+                        <col style="width: 16%">
+                        <col style="width: 1%">
+                        <col style="width: 2%">
+                        <col style="width: 0%">
+                        <col style="width: 7%">
+                        <col style="width: 0%">
+                        <col style="width: 3%">
+                        <col style="width: 2%">
+                        <col style="width: 1%">
+                        <col style="width: 2%">
+                        <col style="width: 6%">
+                        <col style="width: 1%">
+                        <col style="width: 2%">
+                        <col style="width: 2%">
+                        <col style="width: 7%">
+                        <col style="width: 8%">
+                        <col style="width: 0%">
+                        <col style="width: 2%">
+                        <col style="width: 5%">
+                        <col style="width: 20%">
+                    </colgroup>
+                    <thead>
+                        <tr>
+                            <th colspan="18" class="bold">İŞYERİNİN</th>
+                            <th colspan="2" rowspan="9" class="no-border"></th>
+                        </tr>
+                        <tr>
+                            <th colspan="2">Ünvanı</th>
+                            <td colspan="16">${workplace.name}</td>
+                        </tr>
+                        <tr>
+                            <th colspan="2">SGK Sicil No.</th>
+                            <td colspan="16"><span class="underline"></span></td>
+                        </tr>
+                        <tr>
+                            <th colspan="2">Adresi</th>
+                            <td colspan="16">${workplace.address}</td>
+                        </tr>
+                        <tr>
+                            <th colspan="2">Tel ve Faks No</th>
+                            <td colspan="16" class="bold">/</td>
+                        </tr>
+                        <tr>
+                            <th colspan="2">E-Posta</th>
+                            <td colspan="16"><span class="underline"></span></td>
+                        </tr>
+                        <tr>
+                            <td colspan="18">
+                                <p>İşe giriş/periyodik muayene olmayı kabul ettiğimi ve muayene sırasında verdiğim bilgilerin doğru ve eksiksiz olduğunu beyan ederim.</p>
+                                <p>Çalışanın Adı Soyadı</p>
+                                <p>İMZA</p>
+                                <p class="bold">ÇALIŞANIN</p>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th colspan="5">Adı ve soyadı</th>
+                            <td colspan="13" class="bold">${worker.name}</td>
+                        </tr>
+                        <tr>
+                            <th colspan="5">T.C.Kimlik No</th>
+                            <td colspan="13" class="bold">${worker.tc}</td>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td colspan="5">Doğum Yeri ve Tarihi</td>
+                            <td colspan="15"><span class="underline"></span></td>
+                        </tr>
+                        <tr>
+                            <td colspan="5">Cinsiyeti</td>
+                            <td colspan="15"><span class="underline"></span></td>
+                        </tr>
+                        <tr>
+                            <td colspan="5">Eğitim durumu</td>
+                            <td colspan="15"><span class="underline"></span></td>
+                        </tr>
+                        <tr>
+                            <td colspan="5">Medeni durumu</td>
+                            <td colspan="4"><span class="underline"></span></td>
+                            <td colspan="4">Çocuk sayısı</td>
+                            <td colspan="7"><span class="underline"></span></td>
+                        </tr>
+                        <tr>
+                            <td colspan="5">Ev Adresi</td>
+                            <td colspan="15"><span class="underline"></span></td>
+                        </tr>
+                        <tr>
+                            <td colspan="5">Tel No.</td>
+                            <td colspan="15"><span class="underline"></span></td>
+                        </tr>
+                        <tr>
+                            <td colspan="5">Mesleği</td>
+                            <td colspan="15"><span class="underline"></span></td>
+                        </tr>
+                        <tr>
+                            <td colspan="5">Yaptığı iş (Ayrıntılı olarak tanımlanacaktır.)</td>
+                            <td colspan="15"><span class="underline"></span></td>
+                        </tr>
+                        <tr>
+                            <td colspan="5">Çalıştığı bölüm</td>
+                            <td colspan="15"><span class="underline"></span></td>
+                        </tr>
+                        <tr>
+                            <td colspan="3">Daha önce çalıştığı yerler(Bu günden geçmişe doğru)</td>
+                            <td colspan="5">İşkolu</td>
+                            <td colspan="9">Yaptığı iş</td>
+                            <td colspan="3">Giriş-çıkış tarihi</td>
+                        </tr>
+                        <tr>
+                            <td colspan="3">1.</td>
+                            <td colspan="5"><span class="underline"></span></td>
+                            <td colspan="9"><span class="underline"></span></td>
+                            <td colspan="3"><span class="underline"></span></td>
+                        </tr>
+                        <tr>
+                            <td colspan="3">2.</td>
+                            <td colspan="5"><span class="underline"></span></td>
+                            <td colspan="9"><span class="underline"></span></td>
+                            <td colspan="3"><span class="underline"></span></td>
+                        </tr>
+                        <tr>
+                            <td colspan="3">3.</td>
+                            <td colspan="5"><span class="underline"></span></td>
+                            <td colspan="9"><span class="underline"></span></td>
+                            <td colspan="3"><span class="underline"></span></td>
+                        </tr>
+                        <tr>
+                            <td colspan="3" class="bold">Özgeçmişi</td>
+                            <td colspan="17"><span class="underline"></span></td>
+                        </tr>
+                        <tr>
+                            <td colspan="3">Kan grubu</td>
+                            <td colspan="17"><span class="underline"></span></td>
+                        </tr>
+                        <tr>
+                            <td colspan="3">Konjenital/kronik hastalık</td>
+                            <td colspan="17"><span class="underline"></span></td>
+                        </tr>
+                        <tr>
+                            <td colspan="20">Bağışıklama</td>
+                        </tr>
+                        <tr>
+                            <td class="indent">- Tetanoz</td>
+                            <td colspan="19"><span class="underline"></span></td>
+                        </tr>
+                        <tr>
+                            <td class="indent">- Hepatit</td>
+                            <td colspan="19"><span class="underline"></span></td>
+                        </tr>
+                        <tr>
+                            <td class="indent">- Diğer</td>
+                            <td colspan="19"><span class="underline"></span></td>
+                        </tr>
+                        <tr>
+                            <td colspan="20" class="bold">Soygeçmişi</td>
+                        </tr>
+                        <tr>
+                            <td colspan="4">Anne</td>
+                            <td colspan="7">Baba</td>
+                            <td colspan="5">Kardeş</td>
+                            <td colspan="4">Çocuk</td>
+                        </tr>
+                        <tr>
+                            <td colspan="4"><span class="underline"></span></td>
+                            <td colspan="7"><span class="underline"></span></td>
+                            <td colspan="5"><span class="underline"></span></td>
+                            <td colspan="4"><span class="underline"></span></td>
+                        </tr>
+                        <tr>
+                            <td colspan="4"><span class="underline"></span></td>
+                            <td colspan="7"><span class="underline"></span></td>
+                            <td colspan="5"><span class="underline"></span></td>
+                            <td colspan="4"><span class="underline"></span></td>
+                        </tr>
+                        <tr>
+                            <td colspan="4"><span class="underline"></span></td>
+                            <td colspan="7"><span class="underline"></span></td>
+                            <td colspan="5"><span class="underline"></span></td>
+                            <td colspan="4"><span class="underline"></span></td>
+                        </tr>
+                        <tr>
+                            <td colspan="20" class="bold">TIBBİ ANAMNEZ</td>
+                        </tr>
+                        <tr>
+                            <td colspan="15">1. Aşağıdaki yakınmalardan herhangi birini yaşadınız mı?</td>
+                            <td colspan="4" class="text-center">Hayır</td>
+                            <td class="text-center">Evet</td>
+                        </tr>
+                        <tr>
+                            <td colspan="15" class="indent">- Balgamlı öksürük</td>
+                            <td colspan="4" class="text-center"><span class="checkbox"></span></td>
+                            <td class="text-center"><span class="checkbox"></span></td>
+                        </tr>
+                        <tr>
+                            <td colspan="15" class="indent">- Nefes darlığı</td>
+                            <td colspan="4" class="text-center"><span class="checkbox"></span></td>
+                            <td class="text-center"><span class="checkbox"></span></td>
+                        </tr>
+                        <tr>
+                            <td colspan="15" class="indent">- Göğüs ağrısı</td>
+                            <td colspan="4" class="text-center"><span class="checkbox"></span></td>
+                            <td class="text-center"><span class="checkbox"></span></td>
+                        </tr>
+                        <tr>
+                            <td colspan="15" class="indent">- Çarpıntı</td>
+                            <td colspan="4" class="text-center"><span class="checkbox"></span></td>
+                            <td class="text-center"><span class="checkbox"></span></td>
+                        </tr>
+                        <tr>
+                            <td colspan="15" class="indent">- Sırt ağrısı</td>
+                            <td colspan="4" class="text-center"><span class="checkbox"></span></td>
+                            <td class="text-center"><span class="checkbox"></span></td>
+                        </tr>
+                        <tr>
+                            <td colspan="15" class="indent">- İshal veya kabızlık</td>
+                            <td colspan="4" class="text-center"><span class="checkbox"></span></td>
+                            <td class="text-center"><span class="checkbox"></span></td>
+                        </tr>
+                        <tr>
+                            <td colspan="15" class="indent">- Eklemlerde ağrı</td>
+                            <td colspan="4" class="text-center"><span class="checkbox"></span></td>
+                            <td class="text-center"><span class="checkbox"></span></td>
+                        </tr>
+                        <tr>
+                            <td colspan="15" class="indent">-Diğer (belirtiniz)</td>
+                            <td colspan="4" class="text-center"><span class="checkbox"></span></td>
+                            <td class="text-center"><span class="checkbox"></span></td>
+                        </tr>
+                        <tr>
+                            <td colspan="15">2. Aşağıdaki hastalıklardan herhangi birini geçirdiniz mi?</td>
+                            <td colspan="4" class="text-center">Hayır</td>
+                            <td class="text-center">Evet</td>
+                        </tr>
+                        <tr>
+                            <td colspan="15" class="indent">- Kalp hastalığı</td>
+                            <td colspan="4" class="text-center"><span class="checkbox"></span></td>
+                            <td class="text-center"><span class="checkbox"></span></td>
+                        </tr>
+                        <tr>
+                            <td colspan="15" class="indent">- Şeker hastalığı</td>
+                            <td colspan="4" class="text-center"><span class="checkbox"></span></td>
+                            <td class="text-center"><span class="checkbox"></span></td>
+                        </tr>
+                        <tr>
+                            <td colspan="15" class="indent">- Böbrek rahatsızlığı</td>
+                            <td colspan="4" class="text-center"><span class="checkbox"></span></td>
+                            <td class="text-center"><span class="checkbox"></span></td>
+                        </tr>
+                        <tr>
+                            <td colspan="15" class="indent">- Sarılık</td>
+                            <td colspan="4" class="text-center"><span class="checkbox"></span></td>
+                            <td class="text-center"><span class="checkbox"></span></td>
+                        </tr>
+                        <tr>
+                            <td colspan="15" class="indent">- Mide veya on iki parmak ülseri</td>
+                            <td colspan="4" class="text-center"><span class="checkbox"></span></td>
+                            <td class="text-center"><span class="checkbox"></span></td>
+                        </tr>
+                        <tr>
+                            <td colspan="15" class="indent">- İşitme kaybı</td>
+                            <td colspan="4" class="text-center"><span class="checkbox"></span></td>
+                            <td class="text-center"><span class="checkbox"></span></td>
+                        </tr>
+                        <tr>
+                            <td colspan="15" class="indent">- Görme bozukluğu</td>
+                            <td colspan="4" class="text-center"><span class="checkbox"></span></td>
+                            <td class="text-center"><span class="checkbox"></span></td>
+                        </tr>
+                        <tr>
+                            <td colspan="15" class="indent">- Sinir sistemi hastalığı</td>
+                            <td colspan="4" class="text-center"><span class="checkbox"></span></td>
+                            <td class="text-center"><span class="checkbox"></span></td>
+                        </tr>
+                        <tr>
+                            <td colspan="15" class="indent">- Deri hastalığı</td>
+                            <td colspan="4" class="text-center"><span class="checkbox"></span></td>
+                            <td class="text-center"><span class="checkbox"></span></td>
+                        </tr>
+                        <tr>
+                            <td colspan="15" class="indent">- Besin zehirlenmesi</td>
+                            <td colspan="4" class="text-center"><span class="checkbox"></span></td>
+                            <td class="text-center"><span class="checkbox"></span></td>
+                        </tr>
+                        <tr>
+                            <td colspan="15" class="indent">-Diğer (belirtiniz)</td>
+                            <td colspan="4" class="text-center"><span class="checkbox"></span></td>
+                            <td class="text-center"><span class="checkbox"></span></td>
+                        </tr>
+                        <tr>
+                            <td colspan="10">3. Hastanede yattınız mı?</td>
+                            <td colspan="2">Hayır</td>
+                            <td colspan="2" class="text-center"><span class="checkbox"></span></td>
+                            <td colspan="3">Evet, ise tanı?</td>
+                            <td colspan="3"><span class="underline"></span></td>
+                        </tr>
+                        <tr>
+                            <td colspan="10">4. Ameliyat geçirdiniz mi?</td>
+                            <td colspan="2">Hayır</td>
+                            <td colspan="2" class="text-center"><span class="checkbox"></span></td>
+                            <td colspan="3">Evet, ise neden?</td>
+                            <td colspan="3"><span class="underline"></span></td>
+                        </tr>
+                        <tr>
+                            <td colspan="10">5. İş kazası geçirdiniz mi?</td>
+                            <td colspan="2">Hayır</td>
+                            <td colspan="2" class="text-center"><span class="checkbox"></span></td>
+                            <td colspan="3">Evet, ise ne oldu?</td>
+                            <td colspan="3"><span class="underline"></span></td>
+                        </tr>
+                        <tr>
+                            <td colspan="10">6. Meslek Hastalıkları şüphesi ile ilgili tetkik ve muayeneye tabi tutuldunuz mu?</td>
+                            <td colspan="2">Hayır</td>
+                            <td colspan="2" class="text-center"><span class="checkbox"></span></td>
+                            <td colspan="3">Evet, ise sonuç?</td>
+                            <td colspan="3"><span class="underline"></span></td>
+                        </tr>
+                        <tr>
+                            <td colspan="10">7. Maluliyet aldınız mı?</td>
+                            <td colspan="2">Hayır</td>
+                            <td colspan="2" class="text-center"><span class="checkbox"></span></td>
+                            <td colspan="3">Evet, ise nedir ve oranı?</td>
+                            <td colspan="3"><span class="underline"></span></td>
+                        </tr>
+                        <tr>
+                            <td colspan="10">8. Şu anda herhangi bir tedavi görüyor musunuz?</td>
+                            <td colspan="2">Hayır</td>
+                            <td colspan="2" class="text-center"><span class="checkbox"></span></td>
+                            <td colspan="3">Evet, ise nedir?</td>
+                            <td colspan="3"><span class="underline"></span></td>
+                        </tr>
+                        <tr>
+                            <td colspan="3">9. Sigara içiyor musunuz?</td>
+                            <td colspan="3">Hayır</td>
+                            <td class="text-center"><span class="checkbox"></span></td>
+                            <td colspan="13"></td>
+                        </tr>
+                        <tr>
+                            <td colspan="3"></td>
+                            <td colspan="3">Bırakmış</td>
+                            <td class="text-center"><span class="checkbox"></span></td>
+                            <td colspan="6">..........ay/yıl önce</td>
+                            <td colspan="4">.............ay/yıl içmiş</td>
+                            <td colspan="3">...........adet/gün içmiş</td>
+                        </tr>
+                        <tr>
+                            <td colspan="3"></td>
+                            <td colspan="3">Evet</td>
+                            <td class="text-center"><span class="checkbox"></span></td>
+                            <td colspan="6">..........yıldır</td>
+                            <td colspan="7">..............adet/gün</td>
+                        </tr>
+                        <tr>
+                            <td colspan="3">10. Alkol alıyor musunuz?</td>
+                            <td colspan="3">Hayır</td>
+                            <td class="text-center"><span class="checkbox"></span></td>
+                            <td colspan="13"></td>
+                        </tr>
+                        <tr>
+                            <td colspan="3"></td>
+                            <td colspan="3">Bırakmış</td>
+                            <td class="text-center"><span class="checkbox"></span></td>
+                            <td colspan="6">..............yıl önce</td>
+                            <td colspan="4">..............yıl içmiş</td>
+                            <td colspan="3">................sıklıkla içmiş</td>
+                        </tr>
+                        <tr>
+                            <td colspan="3"></td>
+                            <td colspan="3">Evet</td>
+                            <td class="text-center"><span class="checkbox"></span></td>
+                            <td colspan="6">..........yıldır</td>
+                            <td colspan="7">..............sıklıkla</td>
+                        </tr>
+                        <tr>
+                            <td colspan="20" class="bold">FİZİK MUAYENE SONUÇLARI</td>
+                        </tr>
+                        <tr>
+                            <td colspan="6" class="indent">a) Duyu organları</td>
+                            <td colspan="14"><span class="underline"></span></td>
+                        </tr>
+                        <tr>
+                            <td colspan="6" class="indent">- Göz</td>
+                            <td colspan="14"><span class="underline"></span></td>
+                        </tr>
+                        <tr>
+                            <td colspan="6" class="indent">- Kulak-Burun-Boğaz</td>
+                            <td colspan="14"><span class="underline"></span></td>
+                        </tr>
+                        <tr>
+                            <td colspan="6" class="indent">- Deri</td>
+                            <td colspan="14"><span class="underline"></span></td>
+                        </tr>
+                        <tr>
+                            <td colspan="6">b) Kardiyovasküler sistem muayenesi</td>
+                            <td colspan="14"><span class="underline"></span></td>
+                        </tr>
+                        <tr>
+                            <td colspan="6">c) Solunum sistemi muayenesi</td>
+                            <td colspan="14"><span class="underline"></span></td>
+                        </tr>
+                        <tr>
+                            <td colspan="6">d) Sindirim sistemi muayenesi</td>
+                            <td colspan="14"><span class="underline"></span></td>
+                        </tr>
+                        <tr>
+                            <td colspan="6">e) Ürogenital sistem muayenesi</td>
+                            <td colspan="14"><span class="underline"></span></td>
+                        </tr>
+                        <tr>
+                            <td colspan="6">f) Kas-iskelet sistemi muayenesi</td>
+                            <td colspan="14"><span class="underline"></span></td>
+                        </tr>
+                        <tr>
+                            <td colspan="6" class="indent">g) Nörolojik muayene</td>
+                            <td colspan="14"><span class="underline"></span></td>
+                        </tr>
+                        <tr>
+                            <td colspan="6" class="indent">ğ) Psikiyatrik muayene</td>
+                            <td colspan="14"><span class="underline"></span></td>
+                        </tr>
+                        <tr>
+                            <td colspan="6" class="indent">h) Diğer</td>
+                            <td colspan="14"><span class="underline"></span></td>
+                        </tr>
+                        <tr>
+                            <td colspan="20">-TA : / mm-Hg</td>
+                        </tr>
+                        <tr>
+                            <td colspan="20">-Nb : / dk.</td>
+                        </tr>
+                        <tr>
+                            <td colspan="20">-Boy: Kilo: Vücut Kitle İndeksi :</td>
+                        </tr>
+                        <tr>
+                            <td colspan="20" class="bold">LABORATUVAR BULGULARI</td>
+                        </tr>
+                        <tr>
+                            <td colspan="6" class="indent">a) Biyolojik analizler</td>
+                            <td colspan="14"><span class="underline"></span></td>
+                        </tr>
+                        <tr>
+                            <td colspan="6" class="indent">- Kan</td>
+                            <td colspan="14"><span class="underline"></span></td>
+                        </tr>
+                        <tr>
+                            <td colspan="6" class="indent">- İdrar</td>
+                            <td colspan="14"><span class="underline"></span></td>
+                        </tr>
+                        <tr>
+                            <td colspan="6" class="indent">b) Radyolojik analizler</td>
+                            <td colspan="14"><span class="underline"></span></td>
+                        </tr>
+                        <tr>
+                            <td colspan="6" class="indent">c) Fizyolojik analizler</td>
+                            <td colspan="14"><span class="underline"></span></td>
+                        </tr>
+                        <tr>
+                            <td colspan="6" class="indent">- Odyometre</td>
+                            <td colspan="14"><span class="underline"></span></td>
+                        </tr>
+                        <tr>
+                            <td colspan="6" class="indent">- SFT</td>
+                            <td colspan="14"><span class="underline"></span></td>
+                        </tr>
+                        <tr>
+                            <td colspan="6" class="indent">d) Psikolojik testler</td>
+                            <td colspan="14"><span class="underline"></span></td>
+                        </tr>
+                        <tr>
+                            <td colspan="6" class="indent">e) Diğer</td>
+                            <td colspan="14"><span class="underline"></span></td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <div class="bold">KANAAT VE SONUÇ * :</div>
+                <p class="bold">1- ...................................................................................................................................................... işinde bedenen ve ruhen çalışmaya elverişlidir.</p>
+                <p class="bold">2- ................................................................................................................................... şartı ile çalışmaya elverişlidir</p>
+                <p>(<span class="bold">*</span>Yapılan muayene sonucunda çalışanın gece veya vardiyalı çalışma koşullarında çalışıp çalışamayacağı ile vücut sağlığını ve bütünlüğünü tamamlayıcı uygun alet teçhizat vs... bulunması durumunda çalışan için bu koşullarla çalışmaya elverişli olup olmadığı kanaati belirtilecektir.)</p>
+
+                <p>${formattedDate}</p>
+
+                <div class="signature-box">
+                    İMZA
+                </div>
+                <div class="signature-box">
+                    Adı ve Soyadı: ${settings.doctorName || ''}
+                </div>
+                <div class="signature-box">
+                    Diploma Tarih ve No: ${settings.diplomaDate || ''} / ${settings.diplomaNo || ''}
+                </div>
+                <div class="signature-box">
+                    Diploma Tescil Tarih ve No: ${settings.registrationDate || ''} / ${settings.registrationNo || ''}
+                </div>
+                <div class="signature-box">
+                    İşyeri Hekimliği Belgesi Tarih ve No: ${settings.certificateDate || ''} / ${settings.certificateNo || ''}
+                </div>
+            `;
+            
+            document.getElementById('ek2-form-container').style.display = 'block';
+        }
+
+        // Print EK-2 form
+        function printEk2Form() {
+            const printContent = document.getElementById('ek2-form-container').innerHTML;
+            const originalContent = document.body.innerHTML;
+            
+            document.body.innerHTML = printContent;
+            window.print();
+            document.body.innerHTML = originalContent;
+            
+            // Reload the form
+            generateEk2(currentWorkerId);
         }
 
         // Upload EK-2
@@ -782,7 +1384,7 @@
             }
         }
 
-        // Edit worker (Sadece TC kimlik no ve isim soyisim alanları)
+        // Edit worker
         function editWorker(workerId) {
             const workplace = workplaces.find(wp => wp.id === currentWorkplaceId);
             if (!workplace) return;
@@ -811,7 +1413,7 @@
             `;
         }
 
-        // Update worker (Sadece TC kimlik no ve isim soyisim alanları)
+        // Update worker
         function updateWorker(workerId) {
             const name = document.getElementById('edit-worker-name').value;
             const tc = document.getElementById('edit-worker-tc').value;
@@ -870,6 +1472,10 @@
                 document.getElementById('cert-day').value = day || '';
                 document.getElementById('cert-month').value = month || '';
                 document.getElementById('cert-year').value = year || '';
+                document.getElementById('diploma-no').value = settings.diplomaNo || '';
+                document.getElementById('diploma-date').value = settings.diplomaDate || '';
+                document.getElementById('registration-no').value = settings.registrationNo || '';
+                document.getElementById('registration-date').value = settings.registrationDate || '';
             }
         }
 
@@ -882,7 +1488,11 @@
             settings = {
                 doctorName: document.getElementById('doctor-name').value,
                 certificateNo: document.getElementById('certificate-no').value,
-                certificateDate: `${day.padStart(2, '0')}.${month.padStart(2, '0')}.${year}`
+                certificateDate: `${day.padStart(2, '0')}.${month.padStart(2, '0')}.${year}`,
+                diplomaNo: document.getElementById('diploma-no').value,
+                diplomaDate: document.getElementById('diploma-date').value,
+                registrationNo: document.getElementById('registration-no').value,
+                registrationDate: document.getElementById('registration-date').value
             };
             
             localStorage.setItem('settings', JSON.stringify(settings));
