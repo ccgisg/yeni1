@@ -42,6 +42,7 @@
         }
         .button:hover {
             background-color: #2980b9;
+            cursor: pointer;
         }
         .top-bar {
             display: flex;
@@ -123,6 +124,60 @@
             background-color: rgba(0,0,0,0.5);
             z-index: 50;
         }
+        .workers-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        .workers-table th, .workers-table td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        .workers-table th {
+            background-color: #3498db;
+            color: white;
+        }
+        .workers-table tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+        .workers-table tr:hover {
+            background-color: #ddd;
+        }
+        .table-button {
+            padding: 5px 10px;
+            margin: 2px;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        .table-button.edit {
+            background-color: #f39c12;
+            color: white;
+        }
+        .table-button.view {
+            background-color: #3498db;
+            color: white;
+        }
+        .table-button.upload {
+            background-color: #2ecc71;
+            color: white;
+        }
+        .table-button.scan {
+            background-color: #9b59b6;
+            color: white;
+        }
+        .workplace-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .monthly-activities {
+            display: none;
+            padding-left: 20px;
+        }
     </style>
 </head>
 <body>
@@ -191,6 +246,7 @@
             certificateNo: 'HEK-12345',
             certificateDate: '15.06.2020'
         };
+        let currentWorkplaceId = null;
 
         // Login function
         function login() {
@@ -200,9 +256,19 @@
                 document.getElementById('main-app').style.display = 'flex';
                 updateCurrentDate();
                 loadSettings();
+                showMainPage();
             } else {
                 alert('Hatalı şifre! Lütfen tekrar deneyin.');
             }
+        }
+
+        // Show main page
+        function showMainPage() {
+            document.getElementById('content-area').innerHTML = `
+                <h2>Hoş Geldiniz</h2>
+                <p>Sol menüden işlem seçiniz.</p>
+            `;
+            currentWorkplaceId = null;
         }
 
         // Logout function
@@ -363,18 +429,16 @@
                 id: Date.now(),
                 name: name,
                 address: address,
-                contractDate: `${day.padStart(2, '0')}.${month.padStart(2, '0')}.${year}`
+                contractDate: `${day.padStart(2, '0')}.${month.padStart(2, '0')}.${year}`,
+                workers: [],
+                monthlyActivities: {}
             };
             
             workplaces.push(newWorkplace);
             localStorage.setItem('workplaces', JSON.stringify(workplaces));
             
             loadWorkplaces();
-            document.getElementById('content-area').innerHTML = `
-                <h2>${name}</h2>
-                <p><strong>Adres:</strong> ${address}</p>
-                <p><strong>Sözleşme Tarihi:</strong> ${newWorkplace.contractDate}</p>
-            `;
+            showMainPage();
         }
 
         // Edit workplace
@@ -439,7 +503,7 @@
             const index = workplaces.findIndex(wp => wp.id === id);
             if (index !== -1) {
                 workplaces[index] = {
-                    id: id,
+                    ...workplaces[index],
                     name: name,
                     address: address,
                     contractDate: `${day.padStart(2, '0')}.${month.padStart(2, '0')}.${year}`
@@ -467,13 +531,26 @@
             subDir.innerHTML = '';
             
             workplaces.forEach(workplace => {
+                const workplaceDiv = document.createElement('div');
+                workplaceDiv.style.display = 'flex';
+                workplaceDiv.style.alignItems = 'center';
+                
                 const btn = document.createElement('button');
                 btn.className = 'button';
                 btn.textContent = workplace.name;
+                btn.style.flex = '1';
+                btn.style.textAlign = 'left';
                 btn.onclick = function() {
                     showWorkplaceDetails(workplace);
                 };
-                subDir.appendChild(btn);
+                
+                // Add double click event
+                btn.ondblclick = function() {
+                    enterWorkplace(workplace);
+                };
+                
+                workplaceDiv.appendChild(btn);
+                subDir.appendChild(workplaceDiv);
             });
         }
 
@@ -483,8 +560,384 @@
                 <h2>${workplace.name}</h2>
                 <p><strong>Adres:</strong> ${workplace.address}</p>
                 <p><strong>Sözleşme Tarihi:</strong> ${workplace.contractDate}</p>
+                <p><strong>Çalışan Sayısı:</strong> ${workplace.workers ? workplace.workers.length : 0}</p>
+                <button class="button" onclick="enterWorkplace(${JSON.stringify(workplace)})">İşyerine Git</button>
                 <button class="button" onclick="editWorkplace()">Düzenle</button>
             `;
+        }
+
+        // Enter workplace
+        function enterWorkplace(workplace) {
+            currentWorkplaceId = workplace.id;
+            
+            document.getElementById('content-area').innerHTML = `
+                <div class="workplace-header">
+                    <h2>${workplace.name}</h2>
+                    <div>
+                        <button class="button" style="display: inline-block; width: auto;" onclick="importFromExcel()">Excel'den Al</button>
+                        <button class="button" style="display: inline-block; width: auto; margin-left: 10px;" onclick="exportToExcel()">Excel'e Ver</button>
+                    </div>
+                </div>
+                
+                <button class="button" onclick="addWorker()">Yeni Çalışan Ekle</button>
+                
+                <button class="button" id="monthly-activities-btn" onclick="toggleMonthlyActivities()">Aylık Çalışmalarım ▼</button>
+                <div id="monthly-activities" class="monthly-activities">
+                    <!-- Monthly activities will be added here -->
+                </div>
+                
+                <table class="workers-table">
+                    <thead>
+                        <tr>
+                            <th>S.No</th>
+                            <th>Ad Soyad</th>
+                            <th>TC Kimlik No</th>
+                            <th>İlk Muayene</th>
+                            <th>Sonraki Muayene</th>
+                            <th>EK-2</th>
+                            <th>EK-2 Yükle</th>
+                            <th>EK-2 Göster</th>
+                            <th>Taranmış EK-2</th>
+                            <th>Düzenle</th>
+                        </tr>
+                    </thead>
+                    <tbody id="workers-list">
+                        <!-- Workers will be added here -->
+                    </tbody>
+                </table>
+            `;
+            
+            loadWorkers();
+        }
+
+        // Toggle monthly activities
+        function toggleMonthlyActivities() {
+            const activitiesDiv = document.getElementById('monthly-activities');
+            const btn = document.getElementById('monthly-activities-btn');
+            
+            if (activitiesDiv.style.display === 'block') {
+                activitiesDiv.style.display = 'none';
+                btn.innerHTML = 'Aylık Çalışmalarım ▼';
+            } else {
+                activitiesDiv.style.display = 'block';
+                btn.innerHTML = 'Aylık Çalışmalarım ▲';
+                loadMonthlyActivities();
+            }
+        }
+
+        // Load monthly activities
+        function loadMonthlyActivities() {
+            const workplace = workplaces.find(wp => wp.id === currentWorkplaceId);
+            if (!workplace) return;
+            
+            const activitiesDiv = document.getElementById('monthly-activities');
+            activitiesDiv.innerHTML = `
+                <h3>Aylık Çalışmalar</h3>
+                <p>Bu bölüm aylık çalışmalarınızı listeleyecektir.</p>
+                <!-- Add your monthly activities content here -->
+            `;
+        }
+
+        // Add worker
+        function addWorker() {
+            document.getElementById('content-area').innerHTML = `
+                <h2>Yeni Çalışan Ekle</h2>
+                <form id="add-worker-form">
+                    <div class="form-row">
+                        <div class="form-group" style="flex: 2;">
+                            <label for="worker-name">Adı Soyadı:</label>
+                            <input type="text" id="worker-name" style="width: 100%; padding: 8px; margin: 5px 0 15px;">
+                        </div>
+                        <div class="form-group">
+                            <label for="worker-tc">TC Kimlik No:</label>
+                            <input type="text" id="worker-tc" style="width: 100%; padding: 8px; margin: 5px 0 15px;">
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="worker-department">Çalıştığı Bölüm:</label>
+                            <input type="text" id="worker-department" style="width: 100%; padding: 8px; margin: 5px 0 15px;">
+                        </div>
+                        <div class="form-group">
+                            <label for="worker-job">Mesleği/Görevi:</label>
+                            <input type="text" id="worker-job" style="width: 100%; padding: 8px; margin: 5px 0 15px;">
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="first-examination">İlk Muayene Tarihi:</label>
+                            <input type="date" id="first-examination" style="width: 100%; padding: 8px; margin: 5px 0 15px;">
+                        </div>
+                        <div class="form-group">
+                            <label for="next-examination">Sonraki Muayene Tarihi:</label>
+                            <input type="date" id="next-examination" style="width: 100%; padding: 8px; margin: 5px 0 15px;">
+                        </div>
+                    </div>
+                    
+                    <button type="button" class="button" onclick="saveWorker()">Kaydet</button>
+                    <button type="button" class="button" style="background-color: #e74c3c;" onclick="enterWorkplace(workplaces.find(wp => wp.id === currentWorkplaceId))">İptal</button>
+                </form>
+            `;
+            
+            // Set default dates
+            const today = new Date();
+            const nextYear = new Date();
+            nextYear.setFullYear(today.getFullYear() + 1);
+            
+            document.getElementById('first-examination').valueAsDate = today;
+            document.getElementById('next-examination').valueAsDate = nextYear;
+        }
+
+        // Save worker
+        function saveWorker() {
+            const name = document.getElementById('worker-name').value;
+            const tc = document.getElementById('worker-tc').value;
+            const department = document.getElementById('worker-department').value;
+            const job = document.getElementById('worker-job').value;
+            const firstExam = document.getElementById('first-examination').value;
+            const nextExam = document.getElementById('next-examination').value;
+            
+            if (!name || !tc || !department || !job || !firstExam || !nextExam) {
+                alert('Lütfen tüm alanları doldurunuz.');
+                return;
+            }
+            
+            const newWorker = {
+                id: Date.now(),
+                name: name,
+                tc: tc,
+                department: department,
+                job: job,
+                firstExamination: firstExam,
+                nextExamination: nextExam,
+                ek2: null,
+                scannedEk2: null
+            };
+            
+            const workplaceIndex = workplaces.findIndex(wp => wp.id === currentWorkplaceId);
+            if (workplaceIndex !== -1) {
+                if (!workplaces[workplaceIndex].workers) {
+                    workplaces[workplaceIndex].workers = [];
+                }
+                workplaces[workplaceIndex].workers.push(newWorker);
+                localStorage.setItem('workplaces', JSON.stringify(workplaces));
+                enterWorkplace(workplaces[workplaceIndex]);
+            }
+        }
+
+        // Load workers
+        function loadWorkers() {
+            const workplace = workplaces.find(wp => wp.id === currentWorkplaceId);
+            if (!workplace || !workplace.workers) return;
+            
+            const workersList = document.getElementById('workers-list');
+            workersList.innerHTML = '';
+            
+            workplace.workers.forEach((worker, index) => {
+                const row = document.createElement('tr');
+                
+                row.innerHTML = `
+                    <td>${index + 1}</td>
+                    <td>${worker.name}</td>
+                    <td>${worker.tc}</td>
+                    <td>${formatDate(worker.firstExamination)}</td>
+                    <td>${formatDate(worker.nextExamination)}</td>
+                    <td><button class="table-button" onclick="generateEk2(${worker.id})">EK-2 Oluştur</button></td>
+                    <td><button class="table-button upload" onclick="uploadEk2(${worker.id})">Yükle</button></td>
+                    <td><button class="table-button view" onclick="viewEk2(${worker.id})">Göster</button></td>
+                    <td><button class="table-button scan" onclick="viewScannedEk2(${worker.id})">Göster</button></td>
+                    <td><button class="table-button edit" onclick="editWorker(${worker.id})">Düzenle</button></td>
+                `;
+                
+                workersList.appendChild(row);
+            });
+        }
+
+        // Format date for display
+        function formatDate(dateString) {
+            if (!dateString) return '';
+            const date = new Date(dateString);
+            return date.toLocaleDateString('tr-TR');
+        }
+
+        // Generate EK-2 form
+        function generateEk2(workerId) {
+            const workplace = workplaces.find(wp => wp.id === currentWorkplaceId);
+            if (!workplace) return;
+            
+            const worker = workplace.workers.find(w => w.id === workerId);
+            if (!worker) return;
+            
+            alert(`${worker.name} için EK-2 formu oluşturulacak.`);
+            // Here you would implement the actual EK-2 generation
+        }
+
+        // Upload EK-2
+        function uploadEk2(workerId) {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.pdf,.doc,.docx';
+            
+            input.onchange = e => {
+                const file = e.target.files[0];
+                if (file) {
+                    const workplaceIndex = workplaces.findIndex(wp => wp.id === currentWorkplaceId);
+                    if (workplaceIndex !== -1) {
+                        const workerIndex = workplaces[workplaceIndex].workers.findIndex(w => w.id === workerId);
+                        if (workerIndex !== -1) {
+                            workplaces[workplaceIndex].workers[workerIndex].ek2 = file.name;
+                            localStorage.setItem('workplaces', JSON.stringify(workplaces));
+                            loadWorkers();
+                            alert('EK-2 formu başarıyla yüklendi.');
+                        }
+                    }
+                }
+            };
+            
+            input.click();
+        }
+
+        // View EK-2
+        function viewEk2(workerId) {
+            const workplace = workplaces.find(wp => wp.id === currentWorkplaceId);
+            if (!workplace) return;
+            
+            const worker = workplace.workers.find(w => w.id === workerId);
+            if (!worker) return;
+            
+            if (worker.ek2) {
+                alert(`${worker.name} için EK-2 formu gösterilecek: ${worker.ek2}`);
+                // Here you would implement the actual EK-2 viewing
+            } else {
+                alert('Bu çalışan için yüklenmiş EK-2 formu bulunamadı.');
+            }
+        }
+
+        // View scanned EK-2
+        function viewScannedEk2(workerId) {
+            const workplace = workplaces.find(wp => wp.id === currentWorkplaceId);
+            if (!workplace) return;
+            
+            const worker = workplace.workers.find(w => w.id === workerId);
+            if (!worker) return;
+            
+            if (worker.scannedEk2) {
+                alert(`${worker.name} için taranmış EK-2 formu gösterilecek: ${worker.scannedEk2}`);
+                // Here you would implement the actual scanned EK-2 viewing
+            } else {
+                alert('Bu çalışan için taranmış EK-2 formu bulunamadı.');
+            }
+        }
+
+        // Edit worker
+        function editWorker(workerId) {
+            const workplace = workplaces.find(wp => wp.id === currentWorkplaceId);
+            if (!workplace) return;
+            
+            const worker = workplace.workers.find(w => w.id === workerId);
+            if (!worker) return;
+            
+            document.getElementById('content-area').innerHTML = `
+                <h2>Çalışan Düzenle</h2>
+                <form id="edit-worker-form">
+                    <div class="form-row">
+                        <div class="form-group" style="flex: 2;">
+                            <label for="edit-worker-name">Adı Soyadı:</label>
+                            <input type="text" id="edit-worker-name" value="${worker.name}" style="width: 100%; padding: 8px; margin: 5px 0 15px;">
+                        </div>
+                        <div class="form-group">
+                            <label for="edit-worker-tc">TC Kimlik No:</label>
+                            <input type="text" id="edit-worker-tc" value="${worker.tc}" style="width: 100%; padding: 8px; margin: 5px 0 15px;">
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="edit-worker-department">Çalıştığı Bölüm:</label>
+                            <input type="text" id="edit-worker-department" value="${worker.department}" style="width: 100%; padding: 8px; margin: 5px 0 15px;">
+                        </div>
+                        <div class="form-group">
+                            <label for="edit-worker-job">Mesleği/Görevi:</label>
+                            <input type="text" id="edit-worker-job" value="${worker.job}" style="width: 100%; padding: 8px; margin: 5px 0 15px;">
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="edit-first-examination">İlk Muayene Tarihi:</label>
+                            <input type="date" id="edit-first-examination" value="${worker.firstExamination}" style="width: 100%; padding: 8px; margin: 5px 0 15px;">
+                        </div>
+                        <div class="form-group">
+                            <label for="edit-next-examination">Sonraki Muayene Tarihi:</label>
+                            <input type="date" id="edit-next-examination" value="${worker.nextExamination}" style="width: 100%; padding: 8px; margin: 5px 0 15px;">
+                        </div>
+                    </div>
+                    
+                    <button type="button" class="button" onclick="updateWorker(${workerId})">Güncelle</button>
+                    <button type="button" class="button" style="background-color: #e74c3c;" onclick="deleteWorker(${workerId})">Sil</button>
+                    <button type="button" class="button" onclick="enterWorkplace(workplace)">İptal</button>
+                </form>
+            `;
+        }
+
+        // Update worker
+        function updateWorker(workerId) {
+            const name = document.getElementById('edit-worker-name').value;
+            const tc = document.getElementById('edit-worker-tc').value;
+            const department = document.getElementById('edit-worker-department').value;
+            const job = document.getElementById('edit-worker-job').value;
+            const firstExam = document.getElementById('edit-first-examination').value;
+            const nextExam = document.getElementById('edit-next-examination').value;
+            
+            if (!name || !tc || !department || !job || !firstExam || !nextExam) {
+                alert('Lütfen tüm alanları doldurunuz.');
+                return;
+            }
+            
+            const workplaceIndex = workplaces.findIndex(wp => wp.id === currentWorkplaceId);
+            if (workplaceIndex !== -1) {
+                const workerIndex = workplaces[workplaceIndex].workers.findIndex(w => w.id === workerId);
+                if (workerIndex !== -1) {
+                    workplaces[workplaceIndex].workers[workerIndex] = {
+                        ...workplaces[workplaceIndex].workers[workerIndex],
+                        name: name,
+                        tc: tc,
+                        department: department,
+                        job: job,
+                        firstExamination: firstExam,
+                        nextExamination: nextExam
+                    };
+                    
+                    localStorage.setItem('workplaces', JSON.stringify(workplaces));
+                    enterWorkplace(workplaces[workplaceIndex]);
+                }
+            }
+        }
+
+        // Delete worker
+        function deleteWorker(workerId) {
+            if (confirm('Bu çalışanı silmek istediğinize emin misiniz?')) {
+                const workplaceIndex = workplaces.findIndex(wp => wp.id === currentWorkplaceId);
+                if (workplaceIndex !== -1) {
+                    workplaces[workplaceIndex].workers = workplaces[workplaceIndex].workers.filter(w => w.id !== workerId);
+                    localStorage.setItem('workplaces', JSON.stringify(workplaces));
+                    enterWorkplace(workplaces[workplaceIndex]);
+                }
+            }
+        }
+
+        // Import from Excel
+        function importFromExcel() {
+            alert('Excel\'den veri almak için işlevsellik buraya eklenecek.');
+            // Implement actual Excel import functionality
+        }
+
+        // Export to Excel
+        function exportToExcel() {
+            alert('Excel\'e veri aktarmak için işlevsellik buraya eklenecek.');
+            // Implement actual Excel export functionality
         }
 
         // Load settings
@@ -528,7 +981,7 @@
             }
             
             // Set cursor pointer for all buttons
-            const buttons = document.querySelectorAll('.button');
+            const buttons = document.querySelectorAll('.button, .table-button');
             buttons.forEach(button => {
                 button.style.cursor = 'pointer';
             });
