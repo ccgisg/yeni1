@@ -592,8 +592,6 @@
                             <th>S.No</th>
                             <th>Ad Soyad</th>
                             <th>TC Kimlik No</th>
-                            <th>İlk Muayene</th>
-                            <th>Sonraki Muayene</th>
                             <th>EK-2</th>
                             <th>EK-2 Yükle</th>
                             <th>EK-2 Göster</th>
@@ -638,7 +636,7 @@
             `;
         }
 
-        // Add worker
+        // Add worker (Sadece TC kimlik no ve isim soyisim alanları)
         function addWorker() {
             document.getElementById('content-area').innerHTML = `
                 <h2>Yeni Çalışan Ekle</h2>
@@ -654,52 +652,18 @@
                         </div>
                     </div>
                     
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="worker-department">Çalıştığı Bölüm:</label>
-                            <input type="text" id="worker-department" style="width: 100%; padding: 8px; margin: 5px 0 15px;">
-                        </div>
-                        <div class="form-group">
-                            <label for="worker-job">Mesleği/Görevi:</label>
-                            <input type="text" id="worker-job" style="width: 100%; padding: 8px; margin: 5px 0 15px;">
-                        </div>
-                    </div>
-                    
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="first-examination">İlk Muayene Tarihi:</label>
-                            <input type="date" id="first-examination" style="width: 100%; padding: 8px; margin: 5px 0 15px;">
-                        </div>
-                        <div class="form-group">
-                            <label for="next-examination">Sonraki Muayene Tarihi:</label>
-                            <input type="date" id="next-examination" style="width: 100%; padding: 8px; margin: 5px 0 15px;">
-                        </div>
-                    </div>
-                    
                     <button type="button" class="button" onclick="saveWorker()">Kaydet</button>
                     <button type="button" class="button" style="background-color: #e74c3c;" onclick="enterWorkplace(workplaces.find(wp => wp.id === currentWorkplaceId))">İptal</button>
                 </form>
             `;
-            
-            // Set default dates
-            const today = new Date();
-            const nextYear = new Date();
-            nextYear.setFullYear(today.getFullYear() + 1);
-            
-            document.getElementById('first-examination').valueAsDate = today;
-            document.getElementById('next-examination').valueAsDate = nextYear;
         }
 
-        // Save worker
+        // Save worker (Sadece TC kimlik no ve isim soyisim alanları)
         function saveWorker() {
             const name = document.getElementById('worker-name').value;
             const tc = document.getElementById('worker-tc').value;
-            const department = document.getElementById('worker-department').value;
-            const job = document.getElementById('worker-job').value;
-            const firstExam = document.getElementById('first-examination').value;
-            const nextExam = document.getElementById('next-examination').value;
             
-            if (!name || !tc || !department || !job || !firstExam || !nextExam) {
+            if (!name || !tc) {
                 alert('Lütfen tüm alanları doldurunuz.');
                 return;
             }
@@ -708,10 +672,6 @@
                 id: Date.now(),
                 name: name,
                 tc: tc,
-                department: department,
-                job: job,
-                firstExamination: firstExam,
-                nextExamination: nextExam,
                 ek2: null,
                 scannedEk2: null
             };
@@ -742,8 +702,6 @@
                     <td>${index + 1}</td>
                     <td>${worker.name}</td>
                     <td>${worker.tc}</td>
-                    <td>${formatDate(worker.firstExamination)}</td>
-                    <td>${formatDate(worker.nextExamination)}</td>
                     <td><button class="table-button" onclick="generateEk2(${worker.id})">EK-2 Oluştur</button></td>
                     <td><button class="table-button upload" onclick="uploadEk2(${worker.id})">Yükle</button></td>
                     <td><button class="table-button view" onclick="viewEk2(${worker.id})">Göster</button></td>
@@ -753,13 +711,6 @@
                 
                 workersList.appendChild(row);
             });
-        }
-
-        // Format date for display
-        function formatDate(dateString) {
-            if (!dateString) return '';
-            const date = new Date(dateString);
-            return date.toLocaleDateString('tr-TR');
         }
 
         // Generate EK-2 form
@@ -831,7 +782,7 @@
             }
         }
 
-        // Edit worker
+        // Edit worker (Sadece TC kimlik no ve isim soyisim alanları)
         function editWorker(workerId) {
             const workplace = workplaces.find(wp => wp.id === currentWorkplaceId);
             if (!workplace) return;
@@ -853,28 +804,6 @@
                         </div>
                     </div>
                     
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="edit-worker-department">Çalıştığı Bölüm:</label>
-                            <input type="text" id="edit-worker-department" value="${worker.department}" style="width: 100%; padding: 8px; margin: 5px 0 15px;">
-                        </div>
-                        <div class="form-group">
-                            <label for="edit-worker-job">Mesleği/Görevi:</label>
-                            <input type="text" id="edit-worker-job" value="${worker.job}" style="width: 100%; padding: 8px; margin: 5px 0 15px;">
-                        </div>
-                    </div>
-                    
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="edit-first-examination">İlk Muayene Tarihi:</label>
-                            <input type="date" id="edit-first-examination" value="${worker.firstExamination}" style="width: 100%; padding: 8px; margin: 5px 0 15px;">
-                        </div>
-                        <div class="form-group">
-                            <label for="edit-next-examination">Sonraki Muayene Tarihi:</label>
-                            <input type="date" id="edit-next-examination" value="${worker.nextExamination}" style="width: 100%; padding: 8px; margin: 5px 0 15px;">
-                        </div>
-                    </div>
-                    
                     <button type="button" class="button" onclick="updateWorker(${workerId})">Güncelle</button>
                     <button type="button" class="button" style="background-color: #e74c3c;" onclick="deleteWorker(${workerId})">Sil</button>
                     <button type="button" class="button" onclick="enterWorkplace(workplace)">İptal</button>
@@ -882,16 +811,12 @@
             `;
         }
 
-        // Update worker
+        // Update worker (Sadece TC kimlik no ve isim soyisim alanları)
         function updateWorker(workerId) {
             const name = document.getElementById('edit-worker-name').value;
             const tc = document.getElementById('edit-worker-tc').value;
-            const department = document.getElementById('edit-worker-department').value;
-            const job = document.getElementById('edit-worker-job').value;
-            const firstExam = document.getElementById('edit-first-examination').value;
-            const nextExam = document.getElementById('edit-next-examination').value;
             
-            if (!name || !tc || !department || !job || !firstExam || !nextExam) {
+            if (!name || !tc) {
                 alert('Lütfen tüm alanları doldurunuz.');
                 return;
             }
@@ -903,11 +828,7 @@
                     workplaces[workplaceIndex].workers[workerIndex] = {
                         ...workplaces[workplaceIndex].workers[workerIndex],
                         name: name,
-                        tc: tc,
-                        department: department,
-                        job: job,
-                        firstExamination: firstExam,
-                        nextExamination: nextExam
+                        tc: tc
                     };
                     
                     localStorage.setItem('workplaces', JSON.stringify(workplaces));
